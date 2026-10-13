@@ -1,0 +1,736 @@
+---
+title: "Data Task 3"
+format: latex
+editor: visual
+echo: false
+message: false
+warning: false
+mainfont: "Times New Roman"
+execute:
+  fig-width: 7
+  fig-height: 5
+  fig-dpi: 300
+---
+
+## Part 1
+
+```{r}
+#library and data import
+library(tidyverse)
+library(knitr)
+library(dtplyr)
+cps <- read.csv("data/cps_women_lfp.csv")
+```
+
+### 1
+
+As seen in the time series chart below, female labor force participation (LFP) rose from around 58% to 62% between 1994 and 2007. It then continually dropped after 2007. By 2024, female LFP dropped below 1994 levels.
+
+```{r}
+cps |> 
+  filter(sex == "Female") |> 
+  group_by(year, sex) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n()
+  ) |> 
+  ggplot(aes(x = year, y = lfp)) +
+  geom_line(color = "lightblue4", linewidth = 1.5) +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%"), 
+    breaks = seq(.55, .65, by = .01)
+    ) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Labor Force Participation", 
+       title = "Female Labor Force Participation Rate (1994-2024)"
+       )
+```
+
+### 2
+
+First look by age groups. It looks like the 55-64 or the 65-74 group saw the greatest change.
+
+```{r}
+age_plot <- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", ) |> 
+  group_by(year, age) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n()
+  ) |> 
+  ggplot(aes(x = year, 
+             y = lfp,
+             color = age,)
+         ) +
+  geom_line(linewidth = 1.5) +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+  ) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Labor Force Participation", 
+       title = "Female Labor Force Participation Rate by Age (1994-2024)"
+  )
+age_plot
+
+```
+
+The following table reveals that the 65-74 age group saw the greatest change.
+
+```{r}
+#| tbl-cap: "Changes in Labor Force Participation (lfp) in Women by Age"
+age_tibble <- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", race != "" ) |> 
+  group_by(year, age) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"), na.rm = TRUE)/n(),
+    .groups = "drop"
+  ) |> 
+  filter(year %in% c(1994, 2023)) |> 
+  pivot_wider(
+    names_from = year, 
+    values_from = lfp, 
+    names_prefix = "lfp_"
+  ) |> 
+  mutate(
+    abs_lfp_change = abs(lfp_2023 - lfp_1994)
+  ) |> 
+  arrange(desc(abs_lfp_change))
+kable(age_tibble)
+```
+
+Now we look by race. It's hard to see which saw the greatest change.
+
+```{r}
+race_plot <- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", race != "" ) |> 
+  group_by(year, race) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n()
+  ) |> 
+  ggplot(aes(x = year, 
+             y = lfp,
+             color = race)
+         ) +
+  geom_line(linewidth = 1.5) +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+  ) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Labor Force Participation", 
+       title = "Female Labor Force Participation Rate by Race (1994-2024)"
+  )
+race_plot
+
+```
+
+The following table shows that Hispanic women saw the greatest change.
+
+```{r}
+#| tbl-cap: "Changes in Labor Force Participation (lfp) in Women by Race"
+race_tibble <- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", race != "" ) |> 
+  group_by(year, race) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"), na.rm = TRUE)/n(),
+    .groups = "drop"
+  ) |> 
+  filter(year %in% c(1994, 2023)) |> 
+  pivot_wider(
+    names_from = year, 
+    values_from = lfp, 
+    names_prefix = "lfp_"
+  ) |> 
+  mutate(
+    abs_lfp_change = abs(lfp_2023 - lfp_1994)
+  ) |> 
+  arrange(desc(abs_lfp_change))
+kable(race_tibble)
+```
+
+Now we look by education. It's hard to see which saw the greatest change.
+
+```{r}
+education_plot <- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", race != "" ) |> 
+  group_by(year, education) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n()
+  ) |> 
+  ggplot(aes(x = year, 
+             y = lfp,
+             color = education)
+         ) +
+  geom_line(linewidth = 1.5) +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+  ) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Labor Force Participation", 
+       title = "Female Labor Force Participation Rate by Education (1994-2024)"
+  )
+education_plot
+
+```
+
+The following table shows that women with some college and no degree saw the greatest change.
+
+```{r}
+#| tbl-cap: "Changes in Labor Force Participation (lfp) in Women by Education"
+education_tibble <- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", race != "" ) |> 
+  group_by(year, education) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"), na.rm = TRUE)/n(),
+    .groups = "drop"
+  ) |> 
+  filter(year %in% c(1994, 2023)) |> 
+  pivot_wider(
+    names_from = year, 
+    values_from = lfp, 
+    names_prefix = "lfp_"
+  ) |> 
+  mutate(
+    abs_lfp_change = abs(lfp_2023 - lfp_1994)
+  ) |> 
+  arrange(desc(abs_lfp_change))
+kable(education_tibble)
+```
+
+### 3
+
+```{r}
+inc_plot<- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", race != "" ) |>
+  group_by(year) |> 
+  summarise(
+    avg_inc = sum(income, na.rm = TRUE)/n()
+  ) |> 
+   ggplot(aes(x = year, y = avg_inc)) +
+  geom_line(color = "lightblue4", linewidth = 1.5) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Income", 
+       title = "Avg Female Income Older than 25 (1994-2024)"
+       )
+
+soc_ins_plot<- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", race != "" ) |>
+  group_by(year) |> 
+  summarise(
+    avg_incss = sum(incss, na.rm = TRUE)/n()
+  ) |> 
+  ggplot(aes(x = year, y = avg_incss)) +
+  geom_line(color = "lightblue4", linewidth = 1.5) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Social Insurance Income", 
+       title = "Avg Social Insuance Income for Women 25 and Older (1994-2024)"
+       )
+
+edu_plot<- cps |> 
+  drop_na() |> 
+  filter(sex == "Female", age != "< 25", age != "", race != "" ) |>
+  group_by(year, education) |> 
+  summarise(
+    edu_count = n()
+  ) |> 
+  mutate(
+    edu_prop = edu_count/sum(edu_count)
+  ) |> 
+  ggplot(aes(x = year, y = edu_prop, color = education)) +
+  geom_line(linewidth = 1.5) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Proportion of Population", 
+       title = "Changes in Educational Attainment in Women 25 and Older (1994-2024)"
+       )
+
+inc_plot 
+soc_ins_plot 
+edu_plot
+
+```
+
+This points to the idea that educational attainment points to the decline in labor force participation. As women have become more educated, their incomes have grown leading to earlier retirements as seen in the rise in social security incomes.
+
+### 4
+
+```{r}
+#| tbl-cap: "YoY Growth in Female Labor Force Participation Rate (1994-2024)"
+cps |> 
+  filter(sex == "Female") |> 
+  group_by(year) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n()
+  ) |> 
+  mutate(grwth_lfp = (lfp-lag(lfp))/lag(lfp)) |> 
+  ggplot(aes(x = year, y = grwth_lfp)) +
+  geom_line(color = "lightblue4", linewidth = 1.5) +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+  ) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Growth in LFP", 
+       title = "YoY Growth in Female Labor Force Participation Rate (1994-2024)"
+       )
+lfp_growth_tibble <- cps |> 
+  filter(sex == "Female") |> 
+  group_by(year) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n()
+  ) |> 
+  mutate(grwth_lfp = (lfp-lag(lfp))/lag(lfp), 
+         abs_grwth = abs(grwth_lfp)) |> 
+  arrange(desc(abs_grwth)) |> 
+  slice(1:10) |> 
+  select(!abs_grwth)
+kable(lfp_growth_tibble)
+```
+
+From the data produced above, the growth in labor force participation in 2001 could be due to increased proportion of women who had some college education.
+
+### 5
+
+```{r}
+cps |> 
+  filter(sex == "Female") |> 
+  group_by(year, college) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n()
+  ) |> 
+  ggplot(aes(x = year, y = lfp, color = college)) +
+  geom_line( linewidth = 1.5) +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+    ) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Labor Force Participation", 
+       title = "Female Labor Force Participation Rate by College Degree (1994-2024)"
+       )
+```
+
+### 6
+
+The graph below indicates that those with a college degree are more likely to be self-employed compared to those without a college degree. The graph doesn't reveal large distributional changes in self-employment; i.e. labor force participation excluding self-employment tracks labor force participation including self-employment.
+
+```{r}
+cps |> 
+  filter(sex == "Female") |> 
+  mutate(
+    lfp_2 = ifelse(self_employed == "Self-employed", "Not in labor force", lfp)
+  ) |> 
+  group_by(year, college) |> 
+  summarise(
+    Standard = sum(str_count(lfp, "In labor force")) / n(), 
+    `Excl. Self-Employed` = sum(str_count(lfp_2, "In labor force")) / n(),
+    .groups = "drop"
+  ) |> 
+  pivot_longer(
+    cols = c(Standard, `Excl. Self-Employed`), 
+    names_to = "definition", 
+    values_to = "rate"
+  ) |> 
+  ggplot(aes(x = year, y = rate, color = college, linetype = definition)) +
+  geom_line(linewidth = 0.5) +
+  scale_linetype_manual(
+    values = c(
+      "Standard" = "solid", 
+      "Excl. Self-Employed" = "dashed"
+      )
+    ) +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+  ) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(
+    x = "Year",       
+    y = "Labor Force Participation Rate",       
+    title = "Female Labor Force Participation Rate by College Degree (1994-2024)",
+    subtitle = "Comparing Standard LFP vs. Excluding Self-Employed",
+    color = "College Degree",
+    linetype = "Definition"
+  )
+```
+
+### 7
+
+I wouldn't say much of the labor market analysis changes. My preference leans towards the first definition, but would likely depend on what I am analyzing. The secondary definition would fail to account for freelancers, who are clearly part of the labor force. Some labor markets are also dominated by freelance work, meaning the second definition would fail to account for these markets. It does offer an interesting mode of analysis, especially where the two definitions might diverge; i.e. where changes in LFP changes noticably depending on whether you include self-employed or not.
+
+```{r}
+cps |> 
+  filter(sex == "Female") |> 
+  mutate(
+    lfp_2 = ifelse(self_employed == "Self-employed", "Not in labor force", lfp)
+  ) |> 
+  group_by(year) |> 
+  summarise(
+    Standard = sum(str_count(lfp, "In labor force")) / n(), 
+    `Excl. Self-Employed` = sum(str_count(lfp_2, "In labor force")) / n(),
+    .groups = "drop"
+  ) |> 
+  pivot_longer(
+    cols = c(Standard, `Excl. Self-Employed`), 
+    names_to = "definition", 
+    values_to = "rate"
+  ) |> 
+  ggplot(aes(x = year, y = rate, linetype = definition)) +
+  geom_line(linewidth = 0.5) +
+  scale_linetype_manual(
+    values = c(
+      "Standard" = "solid", 
+      "Excl. Self-Employed" = "dashed"
+      )
+    ) +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+  ) +
+  scale_x_continuous(
+    breaks = seq(1994, 2024, by = 3)
+  ) +
+  theme_bw() +
+  labs(
+    x = "Year",       
+    y = "Labor Force Participation Rate",       
+    title = "Female Labor Force Participation Rate by College Degree (1994-2024)",
+    subtitle = "Comparing Standard LFP vs. Excluding Self-Employed",
+    color = "College Degree",
+    linetype = "Definition"
+  )
+```
+
+## Part 2
+
+### 1
+
+Those who teleworked saw higher income, employment, and LFP than those who did not.
+
+```{r}
+cps_wide <- cps |> 
+  lazy_dt() |> 
+  filter(sex == "Female", year < 2021, year > 2015, cpsidp != 0) |> 
+  summarise(
+      income = max(inctot, na.rm = TRUE),
+      .by = c(cpsidp, year:age, lfp, employed), 
+    ) |> 
+  as_tibble() |>
+  ungroup() |> 
+    mutate(
+      income = na_if(income, -Inf)
+    ) |> 
+  summarise(
+    avg_income = sum(income, na.rm = TRUE)/n(), 
+    lfp = sum(str_count(lfp, "In labor force"))/n(), 
+    employment = sum(str_count(employed, "Employed"))/n(),
+    .by = c(year:age)
+  ) |> 
+  pivot_wider(
+    id_cols = (sex:age), 
+    names_from = year, 
+    values_from = c(avg_income, lfp, employment)
+  )
+
+cps_telework <- cps |> 
+  lazy_dt() |> 
+  filter(sex == "Female", year > 2019, year < 2024, cpsidp != 0) |> 
+  mutate(telework = case_when(
+    covid_telework == "Telework from 2021-2022 due to COVID" ~ 1, 
+    covid_telework == "Did not telework from 2021-2022" ~ 0,
+    telework_now == "Had telework in the past week" ~ 1, 
+    telework_now == "Did not telework in the past week" ~ 0,
+    .default = NA_real_
+  )) |>
+  summarise(
+      income = max(inctot, na.rm = TRUE),
+      telework = max(telework, na.rm = TRUE),
+      .by = c(cpsidp, year:age, lfp, employed) 
+    ) |> 
+  select(!cpsidp) |> 
+  as_tibble() |>
+  summarise(
+    avg_income = sum(income, na.rm = TRUE)/n(), 
+    lfp = sum(str_count(lfp, "In labor force"))/n(), 
+    employment = sum(str_count(employed, "Employed"))/n(),
+    .by = c(year:age, telework)
+  ) |> 
+  filter(!is.na(telework)) |> 
+    pivot_wider(
+    id_cols = c(sex:age, telework), 
+    names_from = year, 
+    values_from = c(avg_income, lfp, employment),
+  ) |> 
+  full_join(cps_wide) |>
+  pivot_longer(
+    cols = starts_with(c("avg_income_", "lfp_", "employment_")),
+    names_to = c(".value", "year"),
+    names_pattern = "(.*)_(\\d+)$"
+  ) |>
+  mutate(
+    year = as.numeric(str_extract(year, "\\d+"))
+    ) |> 
+  summarise(
+    avg_income = sum(avg_income, na.rm = TRUE)/n(), 
+    lfp = sum(lfp, na.rm = TRUE)/n(),
+    employment = sum(employment, na.rm = TRUE)/n(),
+    .by = c(year, telework)
+  ) |> 
+  filter(!is.na(telework)) |>
+  mutate(
+    telework = ifelse(telework == 1, "Yes", "no")
+  )
+  
+wage_tele_plot <- cps_telework |> 
+  ggplot(aes(x = year, y = avg_income, color = telework, group = telework)) +
+  geom_vline(xintercept = 2020) +
+  geom_line() +
+   scale_y_continuous(
+     labels = function(y) paste0(y / 1000, "k"),
+  ) +
+  coord_cartesian(ylim = c(0, NA)) +
+  theme_bw() +
+  labs(
+    x = "Year",       
+    y = "Average Income",     
+    title = "Averge Income for Women by Telework Status (2016-2024)",
+    color = "Telework Status"
+  ) 
+
+employment_tele_plot <- cps_telework |> 
+  ggplot(aes(x = year, y = employment, color = telework, group = telework)) +
+  geom_vline(xintercept = 2020) +
+  geom_line() +
+   scale_y_continuous(
+     labels = function(y) paste0(y*100, "%"),
+  ) +
+  theme_bw() +
+  labs(
+    x = "Year",       
+    y = "Employment Rate",     
+    title = "Employment Rate for Women by Telework Status (2016-2024)",
+    color = "Telework Status"
+  ) 
+
+lfp_tele_plot <- cps_telework |> 
+  ggplot(aes(x = year, y = lfp, color = telework, group = telework)) +
+  geom_vline(xintercept = 2020) +
+  geom_line() +
+   scale_y_continuous(
+     labels = function(y) paste0(y*100, "%"),
+  ) +
+  theme_bw() +
+  labs(
+    x = "Year",       
+    y = "Labor Force Participation Rate",     
+    title = "Labor Force Participation for Women by Telework Status (2016-2024)",
+    color = "Telework Status"
+  ) 
+
+wage_tele_plot
+employment_tele_plot 
+lfp_tele_plot
+```
+
+### 2
+
+The plots below show that educational attainment is the largest demographic predictor for 2021 telework. The more educated a women was the more likely she teleworked in 2021. The ability to telework opened economic opportunity as indicated in question 1's graph's. Overall, the graphs above and below points to a positive relationship between economic well-being and the ability to telework. 
+
+```{r}
+telework_groups_n_2021 <- cps |> 
+  lazy_dt() |> 
+filter(sex == "Female", year == 2021, race != "", age != "" ) |> 
+  mutate(telework = case_when(
+    covid_telework == "Telework from 2021-2022 due to COVID" ~ 1, 
+    covid_telework == "Did not telework from 2021-2022" ~ 0,
+    telework_now == "Had telework in the past week" ~ 1, 
+    telework_now == "Did not telework in the past week" ~ 0,
+    .default = NA_real_
+  )) |>
+  as_tibble() |> 
+  filter(!is.na(telework)) |> 
+  summarise(
+    count = sum(telework, na.rm = TRUE), 
+    .by = (race:age)
+  ) |> 
+  arrange(desc(count)) 
+top10_telework_groups_n_2021 <- telework_groups_n_2021 |> 
+  slice(1:10)
+kable(top10_telework_groups_n_2021)
+
+cps_2021 <- cps |> 
+   lazy_dt() |> 
+filter(sex == "Female", year == 2021, race != "", age != "" ) |> 
+  mutate(telework = case_when(
+    covid_telework == "Telework from 2021-2022 due to COVID" ~ 1, 
+    covid_telework == "Did not telework from 2021-2022" ~ 0,
+    telework_now == "Had telework in the past week" ~ 1, 
+    telework_now == "Did not telework in the past week" ~ 0,
+    .default = NA_real_
+  )) |>
+  as_tibble() |> 
+   filter(!is.na(telework)) |> 
+    mutate(
+    telework = ifelse(telework == 1, "Yes", "no")
+  )
+  
+edu_tele_hist <- cps_2021 |> 
+  count(telework, education) |> 
+  mutate(
+    prop = n/sum(n), 
+    .by = telework
+  ) |> 
+  mutate(
+    education = factor(education, levels = c("< HS Diploma", "HS Diploma", "Associate's Degree","Some college, no degree", "Bachelor's Degree", "Master's or Higher"))
+  ) |> 
+  ggplot(aes(x = education, y = prop, fill = telework)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+    scale_y_continuous(
+     labels = function(y) paste0(y*100, "%"),
+  ) +
+  theme(plot.title = element_text(size = 11, face = "bold", lineheight = 1.2)) +
+  labs(
+    x = "Educational level",       
+    y = "Proportion within telework status",     
+    title = "Proportion of Education Level for Women by Telework Status (2021)",
+    fill = "Telework Status"
+  ) 
+
+race_tele_hist <- cps_2021 |> 
+  count(telework, race) |> 
+  mutate(
+    prop = n/sum(n), 
+    .by = telework
+  ) |> 
+  ggplot(aes(x = race, y = prop, fill = telework)) +
+  geom_col(position = "dodge") +
+    coord_flip() +
+    scale_y_continuous(
+     labels = function(y) paste0(y*100, "%"),
+  ) +
+  theme(plot.title = element_text(size = 11, face = "bold", lineheight = 1.2)) +
+  labs(
+    x = "Race",       
+    y = "Proportion within telework status",     
+    title = "Proportion of Race for Women by Telework Status (2021)",
+    fill = "Telework Status"
+  ) 
+
+age_tele_hist <- cps_2021 |> 
+  count(telework, age) |> 
+  mutate(
+    prop = n/sum(n), 
+    .by = telework
+  ) |> 
+  ggplot(aes(x = age, y = prop, fill = telework)) +
+  geom_col(position = "dodge") +
+    coord_flip() +
+    scale_y_continuous(
+     labels = function(y) paste0(y*100, "%"),
+  ) +
+  theme(plot.title = element_text(size = 11, face = "bold", lineheight = 1.2)) +
+  labs(
+    x = "Age Group",       
+    y = "Proportion within telework status",     
+    title = "Proportion of Age Group for Women by Telework Status (2021)",
+    fill = "Telework Status"
+  ) 
+
+edu_tele_hist
+race_tele_hist
+age_tele_hist
+
+```
+
+### 3
+
+We could try to capture similar trends around the 2008 recession for college educated women. LFP declines following the 2008 recession after two years of upward trending LFP. During 2020, LFP had already been declining, and the rate actually slows down and rises from 2021 to 2023. While the Pandemic era recession was abnormal relative to other historical recessions, the general differences in LFP between 2008 and 2020, points to a serious offsetting impact of telework. Mechanistically, telework opened up greater job mobility by removing physical requirements for jobs. This in turn broadened or lowered barriers to job opportunities, allowing more people more quickly find work. A greater ease to find job opportunities then lowers the number of unemployed who might have otherwise dropped out of the labor force. 
+
+```{r}
+plot_08_rec <- cps |> 
+  filter(sex == "Female", college == "Has college degree", year >2004, year <2016) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n(), 
+    .by = year
+  ) |> 
+  ggplot(aes(x = year, y = lfp)) +
+  geom_line(color = "lightblue4") +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+    ) +
+  scale_x_continuous(
+    breaks = seq(2005, 2015, by = 1)
+  ) +
+  geom_vline(xintercept = 2008) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Labor Force Participation", 
+       title = "Labor Force Participation Rate (2005-2015)", 
+       subtitle = "for Women With a College Degree"
+       )
+plot_08_rec
+
+plot_covid <- cps |> 
+  filter(sex == "Female", college == "Has college degree", year >2016, year <2025) |> 
+  summarise(
+    lfp = sum(str_count(lfp, "In labor force"))/n(), 
+    .by = year
+  ) |> 
+  ggplot(aes(x = year, y = lfp)) +
+  geom_line(color = "lightblue4") +
+  scale_y_continuous(
+    labels = function(y) paste0(y * 100, "%")
+    ) +
+  scale_x_continuous(
+    breaks = seq(2016, 2024, by = 1)
+  ) +
+  geom_vline(xintercept = 2020) +
+  theme_bw() +
+  labs(x = "Year", 
+       y = "Labor Force Participation", 
+       title = "Labor Force Participation Rate (2016-2024)", 
+       subtitle = "for Women With a College Degree"
+       )
+plot_covid
+  
+```
